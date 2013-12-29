@@ -1,0 +1,213 @@
+extends layout
+
+block content
+  div#index(data-role='page')
+    div(data-role='header')
+      h1 Adios 2013 - Red Ribbon
+      a.ui-btn-right(href='#add', data-icon='plus') 쓰기
+
+    div(data-role='content')
+      ul#memolist(data-role='listview', data-inset='true')
+        - var dayName = new Array ("일요일","월요일","화요일","수요일","목요일","금요일","토요일")
+        - for(var index=0; index<memos.length; index++) {
+          li
+            a(href='#view', id=memos[index]._id)
+              p=memos[index].content
+              - var date = memos[index].date
+              - var date_str = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' + dayName[date.getDay()]
+              p._timestamp(timestamp=Math.round(date.getTime()/1000), clentside=true)=date_str
+        - }
+
+    div.ui-bar(data-role='footer', data-position='fixed')
+      a(href='#info-dialog', data-icon='info', data-rel='dialog') About
+
+  div#add(data-role='page')
+    div(data-role='header')
+      a(data-rel='back', data-icon='back', data-derection='reverse') 돌아가기
+      h1 쓰기
+
+    div(data-role='content')
+      div(data-role='filedcontain')
+        label(for='memo-add') 메시지
+        textarea#memo-add
+
+    div.ui-bar(data-role='footer', data-position='fixed')
+      a#save-abtn(href='#', data-icon='check') 저장하기
+
+  div#view(data-role='page')
+    div(data-role='header')
+      a(data-rel='back', data-icon='back', data-derection='reverse') 돌아가기
+      h1 메시기 보기
+      a(href='#add', data-icon='plus') 쓰기
+
+    div(data-role='content')
+      div(data-role='filedcontain')
+        label(for='memo-view') 메시지
+        p#memo-view
+        p#memo-date
+
+    //
+      div.ui-bar(data-role='footer', data-position='fixed')
+        div(data-role='controlgroup', data-type='horizontal')
+          a(href='#edit', data-icon='gear', data-transition='flip') 수정
+          a(href='#confirm-dialog', data-icon='delete', data-rel='dialog') 삭제
+
+  div#edit(data-role='page')
+    div(data-role='header')
+      a(data-rel='back', data-icon='back', data-derection='reverse') 돌아가기
+      h1 메시지 수정
+      a(href='#add', data-icon='plus') 쓰기
+
+    div(data-role='content')
+      div(data-role='filedcontain')
+        label(for='memo-edit') 메시지
+        textarea#memo-edit
+
+    div.ui-bar(data-role='footer', data-position='fixed')
+      a#save-ebtn(href='#', data-icon='check') 저장
+
+  div#msg-dialog(data-role='page')
+    div(data-role='header')
+      h1 메시지
+    div(data-role='content')
+      p#message
+      a(href='#index', data-role='button') 확인
+
+  div#info-dialog(data-role='page')
+    div(data-role='header')
+      h1 About
+    div(data-role='content')
+      p
+      | This is a RESTful Memo Application using Node.js, jQuery Mobile, MongoDB, mongoose, express and jade.
+
+  div#confirm-dialog(data-role='page')
+    div(data-role='header')
+      h1 삭제 확인
+    div(data-role='content')
+      p 메시지를 정말로 삭제하시겠습니까? 복구할 수 없습니다.
+      a#del-btn(href='#', data-role='button') 삭제 
+
+
+  != "<script type='text/javascript'>"
+  != "jQuery(function(){"
+  != "$('head').append('<style> span._timestamp { color: inherit; font-family: inherit; font-size: inherit; } </style>');"
+  != "var server_datetime = "
+  != new Date().getTime()
+  != ";"
+  != "var client_date = new Date();"
+  != "timeDif = Math.round((client_date.getTime() - server_datetime) / 1000);"
+  != "refreshDate();"
+  != "setInterval(function(){refreshDate()}, 10000);"
+  != "});"
+  != "</script>"
+
+  script
+    var mstore = {};
+   
+    $(function() {
+      $("#memolist").delegate('a', 'click', function(e) {
+        mstore.selectedid = this.id;
+      });
+
+      $("#index").bind('pagebeforeshow', function(e, ui) {
+        $.get(
+          'memo/list'
+          , function(data) {
+              $("#memolist").empty();
+              for(var index=0; index < data.length; index++) {
+                var date_str = data[index].date;
+                var date = dateFromUTC(date_str);
+                $("#memolist").append('<li><a href="#view" id="' + data[index]._id + '"><p>' + data[index].content + '</p><p class="_timestamp" clientdate="true" timestamp="' + Math.round(date.getTime()/1000) + '"></p></a></li>');
+              }
+              $("#memolist").listview('refresh');
+              refreshDate();
+            }
+          );
+      });
+
+      $("#add").bind('pagebeforeshow', function(e, ui) {
+        $("#memo-add").val(' ');
+      });
+
+      $("#view").bind('pagebeforeshow', function(e, ui) {
+        $("#memo-view").html(' ');
+        $.get(
+          'memo/' + mstore.selectedid
+          , function(data) {
+              $("#memo-view").html(data.content);
+              var date_str = data.date;
+              var date = dateFromUTC(date_str);
+              var dayName = new Array ("일요일","월요일","화요일","수요일","목요일","금요일","토요일");
+              var date_str = date.getFullYear() + '년 ' + (date.getMonth() + 1) + '월 ' + date.getDate() + '일 ' + dayName[date.getDay()] + ' ' + leadingZeros(date.getHours(),2) + ':' + leadingZeros(date.getMinutes(),2) + ':' + leadingZeros(date.getSeconds(),2);
+              $("#memo-date").html(date_str);
+            }
+          );
+      });
+
+      $("#edit").bind('pagebeforeshow', function(e, ui) {
+        $("#memo-edit").val(' ');
+        $.get(
+          'memo/' + mstore.selectedid
+          , function(data) {
+              $("#memo-edit").val(data.content);
+            }
+          );
+      });
+
+      $("#save-abtn").bind('click', function(e) {
+        $.post(
+          'memo'
+          , { content : $("#memo-add").val() }
+          , onSuccess
+          , 'json'
+        );
+      });
+
+      $("#save-ebtn").bind('click', function(e) {
+        $.ajax({
+          type : 'PUT'
+          , url : 'memo/' + mstore.selectedid
+          , data : { content : $("#memo-edit").val() }
+          , success : onSuccess
+          , dataType : 'json'
+        });
+      });
+
+      $("#del-btn").bind('click', function(e) {
+        $.ajax({
+          type : 'DELETE'
+          , url : 'memo/' + mstore.selectedid
+          , success : onSuccess
+        });
+      });
+
+      function onSuccess(data) {
+        $("#message").html(data.message);
+        $.mobile.changePage('#msg-dialog', {transition : 'slidedown', role : 'dialog'});
+      };
+    });
+
+
+    function dateFromUTC(dateAsString) {
+      var parts = dateAsString.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+      return new Date( Date.UTC(
+        parseInt( parts[1] )
+        , parseInt( parts[2], 10 ) - 1
+        , parseInt( parts[3], 10 )
+        , parseInt( parts[4], 10 )
+        , parseInt( parts[5], 10 )
+        , parseInt( parts[6], 10 )
+        , 0
+        ));
+    }
+
+    function leadingZeros(n, digits) {
+      var zero = '';
+      n = n.toString();
+
+      if (n.length < digits) {
+        for (i = 0; i < digits - n.length; i++)
+          zero += '0';
+      }
+      return zero + n;
+    }

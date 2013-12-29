@@ -1,0 +1,155 @@
+extends slot_layout
+
+block content
+  section.container
+    div#carousel
+      - for(var index=0; index<memos.length; index++) {
+        figure=memos[index].content.substring(0,60) + '..'
+      - }
+    
+
+  input#start(type='image', src='/image/go-button.png', width='100', height='100') 
+
+  audio#audio
+
+  != "<script type='text/javascript'>"
+  != "jQuery(function($){"
+  != "init2("
+  != memos.length
+  != ");"
+  != "});"
+  != "</script>"
+
+  script
+    var carousel;
+   
+    function Carousel3D ( el ) {
+      this.element = el;
+
+      this.rotation = 0;
+      this.panelCount = 0;
+      //console.log(this.element.children.length);
+      this.totalPanelCount = this.element.children.length;
+      this.theta = 0;
+
+      this.isHorizontal = false;
+
+    }
+
+    Carousel3D.prototype.modify = function() {
+
+      var panel, angle, i;
+
+      this.panelSize = this.element[ this.isHorizontal ? 'offsetWidth' : 'offsetHeight' ];
+      this.rotateFn = this.isHorizontal ? 'rotateY' : 'rotateX';
+      this.theta = 360 / this.panelCount;
+      this.select = -1; //맨처음 transform 고려
+
+      // do some trig to figure out how big the carousel
+      // is in 3D space
+      this.radius = Math.round( ( this.panelSize / 2) / Math.tan( Math.PI / this.panelCount ) );
+
+      for ( i = 0; i < this.panelCount; i++ ) {
+        panel = this.element.children[i];
+        angle = this.theta * i;
+        panel.style.opacity = 1;
+        //panel.style.backgroundColor = 'hsla(' + angle + ', 100%, 50%, 0.8)';
+        //panel.style.backgroundColor = '#995c7f';
+        if (i == 0) 
+          panel.style.backgroundColor = '#FF184A';
+        else
+          panel.style.backgroundColor = '#999';
+        // rotate panel, then push it out in 3D space
+        //console.log(angle);
+        //console.log(this.radius);
+        //console.log(this.theta);
+        //console.log(this.rotateFn);
+        panel.style[ DDD.transformProp ] = this.rotateFn + '(' + angle + 'deg) translateZ(' + this.radius + 'px)';
+      }
+
+      // hide other panels
+      for (  ; i < this.totalPanelCount; i++ ) {
+        panel = this.element.children[i];
+        panel.style.opacity = 0;
+        panel.style[ DDD.transformProp ] = 'none';
+      }
+
+      // adjust rotation so panels are always flat
+      this.rotation = Math.round( this.rotation / this.theta ) * this.theta;
+      this.transform();
+
+    };
+
+    Carousel3D.prototype.transform = function() {
+      // push the carousel back in 3D space,
+      // and rotate it
+      console.log("transform");
+      this.element.style[ DDD.transformProp ] = 'translateZ(-' + this.radius + 'px) ' + this.rotateFn + '(' + this.rotation + 'deg)';
+      this.select++
+      if ( this.select >= this.panelCount ) this.select = 0;
+    };
+
+    var init2 = function(panelCount) {
+      console.log('init2 is called');
+      //$('#audio').attr('src', '/sex_appeal.mp3');
+      $('#audio').attr('src', '/seoul.mp3');
+    }
+
+    var init = function(panelCount) {
+      console.log('init is called')
+      carousel = new Carousel3D( document.getElementById('carousel') );
+      carousel.element.toggleClassName('panels-backface-invisible');
+      // populate on startup
+      carousel.panelCount = carousel.element.children.length;
+      carousel.modify();
+
+      setTimeout( function(){
+        document.body.addClassName('ready');
+      }, 0);
+    };
+
+    window.addEventListener( 'DOMContentLoaded', init, false);
+
+    jQuery(function($) {
+      $("#start").click(function(){
+        var x, step = 100, loop = 0;
+        var max_loop = Math.floor(Math.random()*100) + 50;
+
+        for ( i = 0; i < carousel.panelCount; i++ ) {
+          var panel = carousel.element.children[i];
+          panel.style.backgroundColor = '#999';
+        }
+
+        fadein($('#audio').get(0));
+        $(".container").css("border", "1px solid #999");
+
+        $("#start").attr("disabled", true);
+        var rotate_fn = function() {
+          carousel.rotation += carousel.theta * -1;
+          carousel.transform();
+          clearInterval(x);
+          loop++;
+          if (loop >= max_loop) {
+            step = step + Math.round(step / 10);
+            console.log(step);
+            if (step < 1000) {
+              x = setInterval(rotate_fn, step);
+            } else {
+              $("#start").attr("disabled", false);
+              fadeout($('#audio').get(0), 1000);
+              setTimeout(function(){
+                $(".container").css("border", "4px solid #3871FF");
+                
+                var panel = carousel.element.children[carousel.select];
+                panel.style.backgroundColor = '#ff184a';
+
+              }, 1000);
+              console .log(carousel.select);
+            }
+          } else {
+            x = setInterval(rotate_fn, step);
+          }	
+        };
+        x = setInterval(rotate_fn, step);
+      });
+    });
