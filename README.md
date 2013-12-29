@@ -15,7 +15,7 @@ web app 실행
     # node app.js
 
     데몬 형태로 실행
-    # forever -l forever.log -o stdout.log -e stderr.log start app.js
+    # forever -l forever.log -o stdout.log -e stderr.log -a start app.js
 
 
 ## URL
