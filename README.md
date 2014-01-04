@@ -8,7 +8,12 @@ mongodb 실행
     # ./mongod --dbpath ~/local/db
 
     데몬 형태로 실행 
-    # nohup ./mongod --dbpath ~/local/db 1> /dev/null 2>&1 & 
+    # ./mongod --fork --logpath ~/log/mongod.log --dbpath ~/local/db
+
+    종료
+    # ./mongod --shutdown
+    또는 
+    # kill <mongod process ID>
 
 web app 실행
 
