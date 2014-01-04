@@ -11,7 +11,7 @@ mongodb 실행
     # ./mongod --fork --logpath ~/log/mongod.log --dbpath ~/local/db
 
     종료
-    # ./mongod --shutdown
+    # ./mongod --shutdown --dbpath ~/local/db
     또는 
     # kill <mongod process ID>
 
