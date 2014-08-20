@@ -1,10 +1,9 @@
-# 연말 이벤트
+# Audio Demo
 
 ## 실행방법
 
 mongodb 실행
 
-    # cd /home/yhbyun/local/mongodb-linux-x86_64-2.0.2/bin
     # ./mongod --dbpath ~/local/db
 
     데몬 형태로 실행 
